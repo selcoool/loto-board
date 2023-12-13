@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .lotto-board {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 250px;
+    }
+    .row {
+      display: flex;
+    }
+    .number {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 5px;
+    }
+    #newBoardBtn,
+    #randomNumberBtn {
+      margin-top: 10px;
+    }
+  </style>
+  <title>Lotto Board</title>
+</head>
+<body>
+
+<h1>Lotto Board</h1>
+
+<div id="lotto-board" class="lotto-board"></div>
+<button id="newBoardBtn" onclick="createNewBoard()">Tạo mới</button>
+<button id="randomNumberBtn" onclick="generateRandomNumber()">Tạo số ngẫu nhiên</button>
+
+<script>
+  const boardContainer = document.getElementById('lotto-board');
+  const newBoardBtn = document.getElementById('newBoardBtn');
+  const randomNumberBtn = document.getElementById('randomNumberBtn');
+  let numbers = [];
+
+  createNewBoard();
+
+  function createNewBoard() {
+    // Clear the existing board
+    boardContainer.innerHTML = '';
+
+    // Generate new unique random numbers for the board
+    numbers = generateUniqueRandomNumbers(5 * 9, 0, 99);
+
+    // Populate the board with numbers
+    for (let i = 0; i < 9; i++) {
+      const rowDiv = document.createElement('div');
+      rowDiv.classList.add('row');
+      for (let j = 0; j < 5; j++) {
+        const numberDiv = document.createElement('div');
+        numberDiv.classList.add('number');
+        numberDiv.textContent = numbers[i * 5 + j];
+        rowDiv.appendChild(numberDiv);
+      }
+      boardContainer.appendChild(rowDiv);
+    }
+  }
+
+  function generateUniqueRandomNumbers(count, min, max) {
+    const numbers = new Set();
+    while (numbers.size < count) {
+      numbers.add(Math.floor(Math.random() * (max - min + 1)) + min);
+    }
+    return Array.from(numbers);
+  }
+
+  function generateRandomNumber() {
+    // Generate a random index within the range of the existing numbers
+    const randomIndex = Math.floor(Math.random() * numbers.length);
+    const randomNum = numbers[randomIndex];
+
+    // Display the random number
+    alert(`Số ngẫu nhiên: ${randomNum}`);
+
+    // Mark the corresponding number on the board in red
+    markNumberOnBoard(randomNum);
+
+    // Check for 5 consecutive red numbers in a row
+    checkForWinner();
+  }
+
+  function markNumberOnBoard(number) {
+    // Iterate through each number on the board
+    const numberDivs = document.querySelectorAll('.number');
+    for (const numberDiv of numberDivs) {
+      const num = parseInt(numberDiv.textContent);
+      if (num === number) {
+        // Mark the matching number in red
+        numberDiv.style.backgroundColor = 'red';
+      }
+    }
+  }
+
+  function checkForWinner() {
+    // Iterate through each row on the board
+    const rows = document.querySelectorAll('.row');
+    for (const row of rows) {
+      const redCount = countConsecutiveRedNumbers(row);
+      if (redCount >= 5) {
+        // Display winner message
+        alert('Chúc mừng! Bạn là người chiến thắng!');
+        break;
+      }
+    }
+  }
+
+  function countConsecutiveRedNumbers(row) {
+    // Iterate through each number in the row and count consecutive red numbers
+    let consecutiveCount = 0;
+    for (const numberDiv of row.children) {
+      if (numberDiv.style.backgroundColor === 'red') {
+        consecutiveCount++;
+        if (consecutiveCount >= 5) {
+          break;
+        }
+      } else {
+        consecutiveCount = 0;
+      }
+    }
+    return consecutiveCount;
+  }
+</script>
+
+</body>
+</html>
