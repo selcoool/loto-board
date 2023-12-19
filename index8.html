@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .lotto-board {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 250px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .column {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 5px;
+    }
+
+    #newBoardBtn,
+    #randomNumberBtn,
+    #startGameBtn,
+    #restartGameBtn,
+    #placeBetBtn {
+      margin-top: 10px;
+    }
+
+    #randomNumberOutput {
+      margin-top: 10px;
+    }
+  </style>
+  <title>Lotto Board</title>
+</head>
+
+<body>
+
+  <h1>Lotto Board</h1>
+
+  <label for="betAmount">Số tiền đặt cược:</label>
+  <input type="number" id="betAmount" min="1" step="1" value="1">
+  <button id="placeBetBtn" onclick="placeBet()">Đặt cược</button>
+  <div id="userBalance">Số dư: 100 đồng</div>
+
+  <div id="lotto-board" class="lotto-board"></div>
+  <button id="newBoardBtn" onclick="createNewBoard()">Tạo mới</button>
+  <button id="randomNumberBtn" onclick="generateRandomNumber()">Tạo số ngẫu nhiên</button>
+  <button id="startGameBtn" onclick="startGame()">Bắt đầu chơi</button>
+  <button id="restartGameBtn" onclick="restartGame()" style="display: none;">Chơi lại</button>
+  <div id="randomNumberOutput"></div>
+
+  <script>
+    const boardContainer = document.getElementById('lotto-board');
+    const newBoardBtn = document.getElementById('newBoardBtn');
+    const randomNumberBtn = document.getElementById('randomNumberBtn');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const restartGameBtn = document.getElementById('restartGameBtn');
+    const randomNumberOutput = document.getElementById('randomNumberOutput');
+    const betAmountInput = document.getElementById('betAmount');
+    const placeBetBtn = document.getElementById('placeBetBtn');
+    const userBalanceDisplay = document.getElementById('userBalance');
+    let numbers = [];
+    let intervalId;
+    let userBalance = 100; // Số dư ban đầu
+    let currentBetAmount = 1; // Số tiền cược ban đầu
+
+    createNewBoard();
+
+    function createNewBoard() {
+      // Khởi tạo lại số dư khi tạo bảng mới
+      userBalance = 100;
+      updateBalanceUI();
+
+      // Các dòng mã tạo bảng mới (không thay đổi)
+      boardContainer.innerHTML = '';
+      randomNumberOutput.textContent = '';
+      restartGameBtn.style.display = 'none';
+
+      numbers = generateUniqueRandomNumbers(5 * 9, 0, 99);
+
+      for (let i = 0; i < 9; i++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.classList.add('row');
+        for (let j = 0; j < 5; j++) {
+          const numberDiv = document.createElement('div');
+          numberDiv.classList.add('column');
+          numberDiv.textContent = numbers[i * 5 + j];
+          rowDiv.appendChild(numberDiv);
+        }
+        boardContainer.appendChild(rowDiv);
+      }
+    }
+
+    function generateUniqueRandomNumbers(count, min, max) {
+      const numbers = new Set();
+      while (numbers.size < count) {
+        const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+        if (!numbers.has(randomNumber)) {
+          numbers.add(randomNumber);
+        }
+      }
+      return Array.from(numbers);
+    }
+
+    function generateRandomNumber() {
+      const randomNum = Math.floor(Math.random() * 100);
+      const numberDivs = document.querySelectorAll('.column');
+      let isDuplicate = false;
+      for (const numberDiv of numberDivs) {
+        const currentNum = parseInt(numberDiv.textContent);
+        if (currentNum === randomNum) {
+          isDuplicate = true;
+          break;
+        }
+      }
+
+      randomNumberOutput.textContent = `Số ngẫu nhiên: ${randomNum}`;
+
+      if (isDuplicate) {
+        markNumberOnBoard(randomNum);
+      }
+    }
+
+    function markNumberOnBoard(num) {
+      const numberDivs = document.querySelectorAll('.column');
+      for (const numberDiv of numberDivs) {
+        const currentNum = parseInt(numberDiv.textContent);
+        if (currentNum === num) {
+          numberDiv.style.backgroundColor = 'red';
+        }
+      }
+
+      if (checkForWinner()) {
+        userBalance += currentBetAmount * 2; // Giả định nhân đôi số tiền cược khi thắng
+        updateBalanceUI();
+        alert(`Chúc mừng! Bạn đã chiến thắng! Số dư mới: ${userBalance} đồng`);
+        stopGame();
+      } else {
+        if (userBalance === 0) {
+          alert('Rất tiếc, bạn đã hết tiền cược. Chơi lại để tiếp tục!');
+          stopGame();
+        }
+      }
+    }
+
+    function checkForWinner() {
+      const rows = document.querySelectorAll('.row');
+      for (const row of rows) {
+        const redCount = countConsecutiveRedNumbers(row);
+        if (redCount >= 5) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function countConsecutiveRedNumbers(row) {
+      let consecutiveCount = 0;
+      for (const numberDiv of row.children) {
+        if (numberDiv.style.backgroundColor === 'red') {
+          consecutiveCount++;
+          if (consecutiveCount >= 5) {
+            break;
+          }
+        } else {
+          consecutiveCount = 0;
+        }
+      }
+      return consecutiveCount;
+    }
+
+    function startGame() {
+      startGeneratingRandomNumbers();
+      startGameBtn.style.display = 'none';
+      restartGameBtn.style.display = 'inline-block';
+    }
+
+    function stopGame() {
+      stopGeneratingRandomNumbers();
+      restartGameBtn.style.display = 'none';
+      startGameBtn.style.display = 'inline-block';
+    }
+
+    function restartGame() {
+      createNewBoard();
+      startGame();
+    }
+
+    function startGeneratingRandomNumbers() {
+      intervalId = setInterval(generateRandomNumber, 50);
+    }
+
+    function stopGeneratingRandomNumbers() {
+      clearInterval(intervalId);
+    }
+
+    function placeBet() {
+      currentBetAmount = parseInt(betAmountInput.value);
+      if (currentBetAmount <= userBalance) {
+        userBalance -= currentBetAmount;
+        updateBalanceUI();
+        alert(`Bạn đã đặt cược ${currentBetAmount} đồng.`);
+      } else {
+        alert('Số dư không đủ để đặt cược.');
+      }
+    }
+
+    function updateBalanceUI() {
+      userBalanceDisplay.textContent = `Số dư: ${userBalance} đồng`;
+    }
+  </script>
+
+</body>
+
+</html>
